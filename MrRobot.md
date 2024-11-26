@@ -1,5 +1,3 @@
-Sure, here's an expanded and more detailed version of each step to provide more clarity and context. 
-
 ---
 
 # Exploitation Walkthrough: Mr. Robot VM
@@ -236,5 +234,3 @@ With the discovery of the final key, the **Mr. Robot VM** was fully exploited. T
 This concludes the journey of owning the **Mr. Robot VM** and gaining valuable insights into system exploitation.
 
 --- 
-
-You can use this as your README.md file for GitHub. Let me know if you need any further refinements!
