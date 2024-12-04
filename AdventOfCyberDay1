@@ -1,0 +1,144 @@
+Here's your report formatted in Markdown for GitHub:
+
+```markdown
+### Clues and Potential CTF Challenges:
+
+1. **Suspicious Website:**
+   - The phrase "full of code and of grime" suggests there might be clues hidden in the website's source code or unusual web behavior.
+   - Challenges could include inspecting JavaScript, analyzing obfuscated code, or finding hidden endpoints.
+
+2. **Breadcrumbs to Find:**
+   - Could refer to metadata, cookies, or even deliberately placed clues in headers or URLs.
+   - A forensic-style challenge could require piecing together logs or correlating timestamps.
+
+3. **"Glitch" Handle:**
+   - This might hint at a username or alias used in a database or file.
+   - You might be tasked with tracking this name across files, logs, or even the dark web in the CTF scenario.
+
+4. **"Beneath the Surface":**
+   - Suggests deeper layers, such as:
+     - Hidden files (steganography in images or files on the website).
+     - Encrypted data requiring decryption or password cracking.
+     - Subdomains with additional vulnerabilities.
+
+5. **"More Complex Than It Seemed":**
+   - This could indicate:
+     - Multi-stage challenges, where solving one leads to another.
+     - A pivot point, such as a backdoor or a reverse shell hidden in plain sight.
+     - Advanced malware analysis with dynamic behavior.
+
+### Suggested Next Steps:
+
+- **Inspect the Website:**
+  - Use tools like `curl`, `wget`, or browser developer tools to review the site’s source code.
+  - Scan for vulnerabilities with tools like `nikto` or `Burp Suite`.
+
+- **Look for Hidden Elements:**
+  - Check for `robots.txt`, `.git` directories, or other files that might be exposed but hidden from view.
+
+- **Trace the "Glitch" Handle:**
+  - Investigate any usernames, email addresses, or handles mentioned in the narrative.
+
+- **Be Ready for Malware Analysis:**
+  - If binaries are involved, use tools like `strings`, `Ghidra`, or `IDA Pro` to analyze their behavior.
+
+Does this tie into your challenge so far? Let me know if you need a deeper dive into any specific area!
+
+---
+
+We received an IP address for a website that converts YouTube videos to MP3:
+
+- **IP:** 10.10.119.248
+
+We tested the functionality by inputting a random YouTube link, which generated a `download.zip` file.
+
+Listing the contents of `download.zip`:
+
+```bash
+unzip -l download.zip
+```
+
+```
+Archive:  download.zip
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+  4583844  2024-10-24 09:50   song.mp3
+     2166  2024-10-30 14:32   somg.mp3
+---------                     -------
+  4586010                     2 files
+```
+
+Upon extraction, we obtained two files: `song.mp3` and `somg.mp3`.
+
+Analyzing their file types:
+
+```bash
+file song.mp3
+```
+
+```
+song.mp3: Audio file with ID3 version 2.3.0, contains: MPEG ADTS, layer III, v1, 192 kbps, 44.1 kHz, Stereo
+```
+
+```bash
+file somg.mp3
+```
+
+```
+somg.mp3: MS Windows shortcut, Item id list present, Points to a file or directory, Has Relative path, Has Working directory, Has command line arguments, Unicoded, MachineID win-base-2019, EnableTargetMetadata KnownFolderID 1AC14E77-02E7-4E5D-B744-2EB1AE5198B7, Archive, ctime=Sat Sep 15 05:14:14 2018, atime=Sat Sep 15 05:14:14 2018, mtime=Sat Sep 15 05:14:14 2018, length=448000, window=normal, IDListSize 0x020d, Root folder "20D04FE0-3AEA-1069-A2D8-08002B30309D", Volume "C:\", LocalBasePath "C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
+```
+
+The file `somg.mp3` is actually a Windows shortcut (`.lnk`) that, when executed, launches PowerShell (`powershell.exe`). This technique is commonly used by attackers to execute malicious scripts or download additional malware. For instance, the Emotet malware has utilized `.lnk` files to run embedded scripts, facilitating further malicious activities.
+
+**Recommendations:**
+
+- **Do Not Execute the File:** Avoid opening `somg.mp3` to prevent potential malicious actions.
+
+- **Conduct a Full System Scan:** Use reputable antivirus software to scan your system for threats.
+
+- **Analyze the Shortcut's Command:** If possible, inspect the command-line arguments within the `.lnk` file to understand its purpose.
+
+- **Update Security Measures:** Ensure your operating system and security software are up to date to protect against known vulnerabilities.
+
+- **Exercise Caution with Downloads:** Be wary of files from untrusted sources, especially those with unexpected extensions or behaviors.
+
+We used `strings` to extract the command from the file:
+
+```bash
+strings somg.mp3
+```
+
+```
+/C:\
+Windows
+/M.1
+^YPq
+System32
+/M.1^YPq.
+/Ma:
+WindowsPowerShell
+/Ma:/Ma:.
+v1.0
+/Ma:/M
+powershell.exe
+C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+win-base-2019
+1SPS
+sf"m
+1SPS
+1SPS0
+1SPS
+jc(=
+1SPS
+```
+
+We also used `exiftool` to extract metadata from the file:
+
+```bash
+exiftool somg.mp3
+```
+
+```
+ExifTool Version Number         : 13.00
+File Name                       : somg.mp3
+ 
