@@ -1,5 +1,3 @@
-🧩 Writeup: Injector
-
 # 🧩 CTF Challenge Review: `Injector`
 
 Acest challenge este un clasic de **Command Injection**.
