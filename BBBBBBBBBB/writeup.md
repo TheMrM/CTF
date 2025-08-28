@@ -16,8 +16,13 @@ După dezarhivare:
 
 ```bash
 unzip -l chall-zip-in-zip.zip
+
+```bash
+```bash
+
 file chall.jpg
 
+```bash
 
 🧪 2. Analiză inițială
 
