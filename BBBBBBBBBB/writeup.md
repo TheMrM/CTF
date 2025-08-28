@@ -50,6 +50,14 @@ BBBBBBBBBB
 Secvența BBBBBBBBBB este injectată în fișierul binar ca un marker corupător:
 → ASCII: 4242 4242 4242 4242 4242
 
+🔧 4. Curățarea fișierului JPEG corupt
+
+Am folosit xxd, tr, sed pentru a elimina toate instanțele BBBBBBBBBB și a reconstrui fișierul binar:
+
+```bash
+xxd -p chall.jpg | tr -d '\n' | sed 's/42424242424242424242//g' | xxd -r -p > hidden_image.jpg
+```
+
 📂 5. Verificare și vizualizare imagine reconstruită
 ```bash
 file hidden_image.jpg
