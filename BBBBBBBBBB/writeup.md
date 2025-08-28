@@ -92,5 +92,3 @@ tesseract prepped.jpg stdout
 🏁 8. Rezultatul final
 
 Flag-ul real, vizibil în imagine.
-
-TFCCTF{the_fl4g_1s_th3_w4y}
