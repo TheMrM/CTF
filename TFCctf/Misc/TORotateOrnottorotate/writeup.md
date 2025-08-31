@@ -183,7 +183,7 @@ def main():
 
 if __name__ == "__main__":
     main()
-
+'''
 Rulare
 Remote cu socat (recomandat)
 
