@@ -16,9 +16,6 @@
 - [Solver (Python)](#solver-python)
 - [Rulare](#rulare)
   - [Remote cu `socat` (recomandat)](#remote-cu-socat-recomandat)
-  - [Alternativ: `ncat` + FIFO](#alternativ-ncat--fifo)
-- [Capcane & Debugging](#capcane--debugging)
-- [Lessons learned](#lessons-learned)
 
 ---
 
