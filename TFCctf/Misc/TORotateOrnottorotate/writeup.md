@@ -183,17 +183,17 @@ def main():
 
 if __name__ == "__main__":
     main()
-'''
+```
 Rulare
 Remote cu socat (recomandat)
 
 # în directorul cu solve.py
-'''
+```
 socat -v -T60 \
   EXEC:"python3 -u ./solve.py",pty,raw,echo=0,setsid,ctty \
   OPENSSL:to-rotate-<HASH>.challs.tfcctf.com:1337,verify=0 \
 | tee solver_out.txt
-'''
+```
 
 - pty,raw,echo=0 previne eco-loop-uri.
 
