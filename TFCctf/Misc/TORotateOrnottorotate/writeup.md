@@ -1,69 +1,74 @@
-Write-up (RO) — „To rotate, or not to rotate” (TFCCTF)
-🧩 Rezumat
+# TFCCTF — „To rotate, or not to rotate” (Write-up, RO)
 
-Challenge-ul expune un server care lucrează cu modele de segmente pe o grilă 3×3. În Faza 1 îți arată pe rând câte un N_i și te roagă să trimiți un model (o listă de segmente). În Faza 2, serverul ia modelele trimise de tine, le rotește aleator (0°, 90°, 180°, 270°), poate inversa capetele fiecărui segment și amestecă ordinea segmentelor, apoi îți cere: „Your answer for N?”.
-Cheia este să calculezi o semnătură canonică a modelului invariantă la rotație. În Faza 1, mapăm semnătură → N; în Faza 2, recalculezi semnătura pentru modelul „beat” și răspunzi cu N corespondent.
+> **Rezumat scurt:** Serverul lucrează cu **modele de segmente** pe o grilă 3×3.  
+> **Faza 1:** pentru fiecare `N_i` trimiți un model (listă de segmente).  
+> **Faza 2:** serverul îți trimite modele **rotite aleator** (0°, 90°, 180°, 270°), cu capete posibil inversate și ordine amestecată, și cere „**Your answer for N?**”.  
+> **Cheia:** calculezi o **semnătură canonică** invariantă la rotație (`canon_bits`). În Faza 1 mapezi `semnătură → N`, în Faza 2 recalculezi semnătura și răspunzi cu `N`.
 
-🔎 Analiza
-Grila, segmentele și restricția gcd
+---
 
-Punctele sunt cele 9 coordonate ale grilei: (x,y) cu x,y ∈ {0,1,2}. Un segment dintre două puncte distincte (a,b) este valid dacă:
+## Cuprins
+- [Analiza](#analiza)
+  - [Grila, segmentele și regula `gcd`](#grila-segmentele-și-regula-gcd)
+  - [Rotațiile (90° CW/CCW)](#rotațiile-90-cwccw)
+  - [Semnătura canonică (`canon_bits`)](#semnătura-canonică-canon_bits)
+- [Strategia de rezolvare](#strategia-de-rezolvare)
+- [Solver (Python)](#solver-python)
+- [Rulare](#rulare)
+  - [Remote cu `socat` (recomandat)](#remote-cu-socat-recomandat)
+  - [Alternativ: `ncat` + FIFO](#alternativ-ncat--fifo)
+- [Capcane & Debugging](#capcane--debugging)
+- [Lessons learned](#lessons-learned)
 
-se află în grilă,
+---
 
-gcd(|dx|, |dy|) = 1, adică segmentul nu sare „peste” un punct intermediar pe grilă.
+## Analiza
 
-Totalul segmentelor valide este 28. Serverul indexează aceste 28 de segmente într-o listă SEGMENTS și construiește un dicționar SEG_INDEX[segment] = index.
+### Grila, segmentele și regula `gcd`
+Punctele sunt cele 9 coordonate ale grilei `(x,y)` cu `x,y ∈ {0,1,2}`.  
+Un **segment** între două puncte distincte `(a,b)` este **valid** dacă:
+- ambele capete sunt în grilă;
+- `gcd(|dx|, |dy|) = 1`, adică nu „sare peste” un punct intermediar.
 
-Rotațiile
+Totalul segmentelor valide este **28**. Serverul le indexează în `SEGMENTS` și construiește `SEG_INDEX[segment] = index`.
 
-Rotația cu k ∈ {0,1,2,3} pași de 90° în jurul centrului (1,1) se face prin:
+### Rotațiile (90° CW/CCW)
+Rotația în jurul centrului `(1,1)`:
 
-'''
 (x, y) -> (x-1, y-1) -> rotiri de 90° succesive -> + (1,1)
-'''
 
-Aplicând rotația asupra capetelor unui segment și sortând (A,B) astfel încât A ≤ B, obținem segmentul rotit rot_segment(seg, k).
+Aplici rotația capetelor și sortezi `(A,B)` astfel încât `A ≤ B` ⇒ `rot_segment(seg, k)`.
 
-Semnătura canonică (canon_bits)
+### Semnătura canonică (`canon_bits`)
+Pentru o listă `segs`:
+1. Pentru fiecare `k ∈ {0,1,2,3}`, rotești toate segmentele și setezi bitul corespondent (într-o mască pe 28 biți).
+2. Alegi **minimul** dintre cele 4 măști. Acesta este **`canon_bits`** – invariant la rotație, inversare de capete și ordine.
 
-Pentru o listă de segmente segs, serverul:
+**Concluzie:** două modele identice până la rotație au același `canon_bits`.
 
-Pentru fiecare k ∈ {0,1,2,3}, rotește toate segmentele și pune bitul corespunzător fiecărui segment rotit în masca de 28 de biți.
+---
 
-Alege minimul dintre cele 4 măști — acesta e „canonical bits”: invariant la rotație, la inversarea capetelor și la ordinea segmentelor.
+## Strategia de rezolvare
 
-Concluzie: două modele care sunt identice până la rotație vor avea același canon_bits.
+- **Faza 1 (training, Q=120):**
+  - Serverul afișează `N_1: <N>`, `N_2: <N>`, …
+  - Tu trimiți pentru fiecare `N` **un model** (subset de segmente valide).
+  - Calculezi `canon_bits(model)` și salvezi `map[canon_bits] = N`.
+  - ⚠️ Modelele trebuie să aibă **semnături unice** (altfel serverul refuză dacă aceeași semnătură apare la un alt `N`).
 
+- **Faza 2 (quiz):**
+  - Pentru fiecare „**MutatedPattern**”, citești `m` segmente.
+  - Calculezi `canon_bits` al modelului **mutat** și cauți în `map`.
+  - Răspunzi cu `N` ⇒ primești `OK`.  
+  - După toate, primești **flag-ul** dacă scorul e complet.
 
-🛠️ Strategia de rezolvare
+---
 
-Faza 1 (training):
+## Solver (Python)
 
-Serverul afișează N_1: <N>, N_2: <N>, … de Q=120 ori.
+> Copiază logică identică serverului (grilă, rotații, `canon_bits`) și comunică linie-cu-linie pe `stdin/stdout`.
 
-Tu trimiți, pentru fiecare N, un model ales de tine (un subset de segmente valide).
-
-Calculezi canon_bits(model) și salvezi în dicționar: map[canon_bits] = N.
-
-Ai grijă ca modelele trimise să aibă semnături unice (altfel serverul refuză un duplicat cu alt N).
-
-Faza 2 (quiz):
-
-Pentru fiecare „MutatedPattern” de la server, citești m linii cu segmente.
-
-Calculezi canon_bits al modelului mutat și cauți în map.
-
-Răspunzi cu N corespunzător → primești OK.
-
-Dacă răspunzi corect la toate, primești flag-ul.
-
-💻 Solver (Python, compact)
-
-Acest solver copiază logica serverului (grilă, rotații, canon_bits) și implementează protocolul.
-Intrare/Ieșire: linia cu linie pe stdin/stdout.
-
-'''
+```python
 #!/usr/bin/env python3
 import sys, re, random
 
@@ -178,29 +183,20 @@ def main():
 
 if __name__ == "__main__":
     main()
-'''
 
-▶️ Rulare
-Varianta — Remote cu socat (recomandat)
+Rulare
+Remote cu socat (recomandat)
 
-'''
 # în directorul cu solve.py
+'''
 socat -v -T60 \
   EXEC:"python3 -u ./solve.py",pty,raw,echo=0,setsid,ctty \
   OPENSSL:to-rotate-<HASH>.challs.tfcctf.com:1337,verify=0 \
 | tee solver_out.txt
 '''
 
-- pty,raw,echo=0 previne „eco-loop-uri”.
+- pty,raw,echo=0 previne eco-loop-uri.
 
 - verify=0 e ok pentru endpoint-urile CTF.
 
-- În solver_out.txt vei avea și flag-ul.
-
-💡 „Lessons learned”
-
-Invarianții (semnături canonice) sunt arma supremă împotriva rotațiilor, permutărilor și schimbării ordinii.
-
-Reproducerea exactă a logicii serverului (grilă, rotații, gcd, canon_bits) elimină orice ambiguitate.
-
-Pentru integrare remote, socat cu pty,raw,echo=0 e prietenul tău.
+- solver_out.txt va conține ieșirea solverului (inclusiv flag-ul).
