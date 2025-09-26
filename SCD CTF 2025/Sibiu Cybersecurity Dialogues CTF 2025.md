@@ -182,14 +182,4 @@ for key in range(256):
   find / -type f -iname '*.db' -o -iname '*.sqlite*' 2>/dev/null
   ```
 
----
-
-## 14) Reproduction options
-Choose how you want this exported:
-
-- (A) **Plain .md** (this document) — ready to copy/paste.
-- (B) **commands_used.txt** — one command per line.
-- (C) **run.sh** — wrapper that reproduces safe environment steps (non-destructive) and recreates output files.
-
-Tell me which option you prefer (A/B/C) or if you want modifications — I can produce the requested artifact next.
 
